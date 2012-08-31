@@ -1,26 +1,26 @@
-import sqlite3
-import SqlConnector
 import ParameterGenerator
-import SSHScheduler
-import SimpleWorker
-import MyMapper
+import Mapper
 
-db = SqlConnector.Database(sqlite3);    
-connector = SqlConnector.SqlConnector(db,'experiment')
-scheduler = SSHScheduler.SSHScheduler(['localhost']);
-worker = SimpleWorker.SimpleWorker();
+class Record:
+    pigs = int;
+    chickens = int;
+    cows = int;
+    fish = str;
 
-parameters = MyMapper.Record();
+class Result:
+    fucks = int;
+
+parameters = Record();
 parameters.pigs = range(0,10);
 parameters.chickens = range(0,10);
 parameters.cows = range(0,10);
 parameters.fish = ['chuck','larry','bill'];
 generator = ParameterGenerator.ParameterGenerator(parameters);
 
-connector.selectRecords('records',MyMapper.Record);
-connector.selectResults('results',MyMapper.Result);
+class MyMapper(Mapper.Mapper):      
+    def map(self,record):
+        result = Result();
+        result.fucks = record.pigs;
+        return result;
+mapper = MyMapper();
 
-mapper = MyMapper.MyMapper();
-
-generator.generate(connector);
-scheduler.run(connector,worker,mapper);
