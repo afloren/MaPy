@@ -1,27 +1,38 @@
-class SqlConnector:
-    def __init__(self,db,dbName,recordTable,resultTable,Record,Result):
+import Connector
+
+class SqlConnector(Connector.Connector):
+    def __init__(self,db,dbName):
         self.db = db;
         self.dbName = dbName;
-        self.recordTable = recordTable;
-        self.resultTable = resultTable;
+	self._isOpen = False;
+
+    def open(self):
+        if not self._isOpen:
+            self.conn = self.db.connect(self.dbName);
+            self.c = self.conn.cursor();
+            self._isOpen = True;
+
+    def close(self):
+        if self._isOpen:
+            self.conn.commit();
+            self.conn.close();
+            self._isOpen = False;
+
+    def selectRecords(self,name,Record):
+        self.recordTable = name;
         self.Record = Record;
-        self.Result = Result;
         self.open();
         if not self.tableExists(self.recordTable):
             self.createTable(self.recordTable,self.Record);
-        if not self.tableExists(self.resultTable):
-            self.createTable(self.resultTable,self.Result,self.recordTable);
         self.close();
 
-    def open(self):
-        self.conn = self.db.connect(self.dbName);
-        self.c = self.conn.cursor();
-        self._isOpen = True;
-
-    def close(self):
-        self.conn.commit();
-        self.conn.close();
-        self._isOpen = False;
+    def selectResults(self,name,Result):
+        self.resultTable = name;
+        self.Result = Result;
+        self.open();
+        if not self.tableExists(self.resultTable):
+            self.createTable(self.resultTable,self.Result);
+        self.close();
 
     def clearRecords(self):
         self.dropTable(self.recordTable);
@@ -29,11 +40,25 @@ class SqlConnector:
 
     def clearResults(self):
         self.dropTable(self.resultTable);
-        self.createTable(self.resultTable,self.Result,self.recordTable);
+        self.createTable(self.resultTable,self.Result);
 
-    def clear(self):
-        self.clearRecords();
-        self.clearResults();
+    def getRecordCount(self):
+        return self.getRowCount(self.recordTable);
+
+    def getResultCount(self):
+        return self.getRowCount(self.resultTable);
+
+    def saveRecord(self,recordId,record):
+        self.insertRow(self.recordTable,self.Record,recordId,record);
+
+    def loadRecord(self,recordId):
+        return self.selectRow(self.recordTable,self.Record,recordId);
+
+    def saveResult(self,recordId,result):
+        self.insertRow(self.resultTable,self.Result,recordId,result);
+
+    def loadResult(self,recordId):
+        return self.selectRow(self.resultTable,self.Result,recordId);
 
     def tableExists(self,table):
         assert(self._isOpen);
@@ -41,66 +66,47 @@ class SqlConnector:
         self.c.execute(cmd.format(table));
         return False if self.c.fetchone() is None else True;
 
-    def createTable(self,table,row,ref=None):
+    def createTable(self,table,Row):
         assert(self._isOpen);
-        types = [k+' '+getSqlType(row.__dict__[k]) for k in row.__dict__ if not k[0] is '_'];
+        types = [k+' '+getSqlType(Row.__dict__[k]) for k in Row.__dict__ if not k[0] is '_'];
         typeStr = reduce(lambda t1,t2: t1+', '+t2,types);
-        if ref is None:
-            cmd = 'create table {} (id integer primary key, {})';
-            self.c.execute(cmd.format(table,typeStr));
-        else:
-            cmd = 'create table {} (id integer primary key, rid integer references {}, {})'
-            self.c.execute(cmd.format(table,ref,typeStr));
+        cmd = 'create table {} (id integer primary key, {})';
+        self.c.execute(cmd.format(table,typeStr));
 
     def dropTable(self,table):
         assert(self._isOpen);
         cmd = 'drop table {}';
         self.c.execute(cmd.format(table));
 
-    def insertRow(self,table,row,uid,ref=None,refUid=0):
+    def insertRow(self,table,Row,uid,row):
+        #assert(self.checkTypes(Row,row));
         assert(self._isOpen);
-        keys = [k for k in row.__dict__ if not k[0] is '_'];
+        keys = [k for k in Row.__dict__ if not k[0] is '_'];
         keyStr = reduce(lambda t1,t2: t1+', '+t2,keys);
         values = [row.__dict__[k] for k in keys];
         values = ['\''+v+'\'' if getSqlType(v) is 'text' else str(v) for v in values];
         valueStr = reduce(lambda v1,v2: v1+', '+v2,values);
-        cmd = 'insert into {} ({}) values ({})';
-        self.c.execute(cmd.format(table,keyStr,valueStr));
+        cmd = 'insert into {} (id, {}) values ({}, {})';
+        self.c.execute(cmd.format(table,keyStr,uid,valueStr));
 
     def selectRow(self,table,Row,uid):
         assert(self._isOpen);
-        
-    def saveRecord(self,recordId,record):
-        assert(self._isOpen);
-        keys = [k for k in self.Record.__dict__ if not k[0] is '_'];
-        keyStr = reduce(lambda t1,t2: t1+', '+t2,keys);
-        values = [record.__dict__[k] for k in keys];
-        values = ['\''+v+'\'' if getSqlType(v) is 'text' else str(v) for v in values];
-        valueStr = reduce(lambda v1,v2: v1+', '+v2,values);
-        cmd = 'insert into {} (id, {}) values ({}, {})';
-        self.c.execute(cmd.format(self.recordTable,keyStr,recordId,valueStr));        
-
-    def loadRecord(self,recordId):
-        assert(self._isOpen);
-        keys = [k for k in self.Record.__dict__ if not k[0] is '_'];
+        keys = [k for k in Row.__dict__ if not k[0] is '_'];
         keyStr = reduce(lambda t1,t2: t1+', '+t2,keys);
         cmd = 'select {} from {} where id={}';
-        self.c.execute(cmd.format(keyStr,self.recordTable,recordId));
-        row = self.c.fetchone();
-        record = self.Record();
+        self.c.execute(cmd.format(keyStr,table,uid));
+        r = self.c.fetchone();
+        row = Row();
         for i,key in enumerate(keys):
-            record.__dict__[key] = row[i];
-        return record;
-
-    def saveResult(self,recordId,result):
+            row.__dict__[key] = r[i];
+        return row;
+        
+    def getRowCount(self,table):
         assert(self._isOpen);
-        keys = [k for k in self.Result.__dict__ if not k[0] is '_']
-        keyStr = reduce(lambda k1,k2: k1+', '+k2,keys);
-        values = [result.__dict__[k] for k in keys];
-        values = ['\''+v+'\'' if getSqlType(v) is 'text' else str(v) for v in values];
-        valueStr = reduce(lambda v1,v2: v1+', '+v2,values);
-        cmd = 'insert into {} (rid, {}) values ({}, {})';
-        self.c.execute(cmd.format(self.resultTable,keyStr,recordId,valueStr));
+        cmd = 'select count(*) from {}';
+        self.c.execute(cmd.format(table));
+        row = self.c.fetchone();
+        return row[0];
 
 class Database:
     def __init__(self,dbModule):

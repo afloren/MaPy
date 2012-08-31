@@ -1,4 +1,4 @@
-import time
+import Mapper
 
 class Record:
     pigs = int;
@@ -9,7 +9,7 @@ class Record:
 class Result:
     fucks = int;
 
-class Mapper:      
+class MyMapper(Mapper.Mapper):      
     def map(self,record):
         result = Result();
         result.fucks = record.pigs;
