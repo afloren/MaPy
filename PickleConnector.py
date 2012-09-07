@@ -2,7 +2,7 @@ import SqlConnector
 import pickle
 import sqlalchemy
 
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, sql
+from sqlalchemy import Table, Column, Integer, PickleType, MetaData, sql
 
 class PickleConnector(SqlConnector.SqlConnector):
     def __init__(self,db):
@@ -22,7 +22,7 @@ class PickleConnector(SqlConnector.SqlConnector):
     def createTable(self,table):
         t = Table(table,self.meta);
         t.append_column(Column('id', Integer, primary_key=True));
-        t.append_column(Column('obj', String));
+        t.append_column(Column('obj', PickleType));
         t.create();
 
     def dropTable(self,table):
@@ -30,18 +30,19 @@ class PickleConnector(SqlConnector.SqlConnector):
         t.drop();
 
     def insertRow(self,table,uid,row):
-        val = pickle.dumps(row);
         t = Table(table,self.meta);
-        t.insert().execute(id=uid,obj=val);
+        t.insert().execute(id=uid,obj=row);
 
     def selectRow(self,table,uid):
         t = Table(table,self.meta);
         result = sql.select([t.c.obj],t.c.id==uid).execute();
         row = result.fetchone();
-        return pickle.loads(str(row[0]));
+        return row[0];
         
     def getRowCount(self,table):
         t = Table(table,self.meta);
         result = t.select([sql.func.count(t.c.id)]).execute();
         row = result.fetchone();
         return row[0];
+
+
