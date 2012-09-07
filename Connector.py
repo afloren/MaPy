@@ -1,41 +1,35 @@
 
 class Connector:
-    def open(self):
-        pass
+    def getList(self,name):	
+        return List(self,name);
 
-    def close(self):
-        pass
+    def clear(self,name):
+        raise NotImplementedError("Connector must implement clear");
 
-    def selectRecords(self,name,Record):
-        raise NotImplementedError("Connector must implement selectRecords");
+    def setItem(self,name,index,item):
+        raise NotImplementedError("Connector must implement saveItem");
 
-    def selectResults(self,name,Result):
-        raise NotImplementedError("Connector must implement selectResults");
+    def getItem(self,name,index):
+        raise NotImplementedError("Connector must implement getItem");
 
-    def clearRecords(self):
-        raise NotImplementedError("Connector must implement clearRecords");
+    def length(self,name):
+        raise NotImplementedError("Connector must implement length");
 
-    def clearResults(self):
-        raise NotImplementedError("Connector must implement clearResults");
+class List:
+    def __init__(self,connector,name):
+        self.connector = connector;
+        self.name = name;
 
     def clear(self):
-        self.clearRecords();
-        self.clearResults();
+        self.connector.clear(self.name);
 
-    def saveRecord(self,recordId,record):
-        raise NotImplementedError("Connector must implement saveRecord");
+    def setItem(self,index,item):
+        self.connector.setItem(self.name,index,item);
 
-    def loadRecord(self,recordId):
-        raise NotImplementedError("Connector must implement loadRecord");
+    def getItem(self,index):
+        return self.connector.getItem(self.name,index);
 
-    def getRecordCount(self):
-        raise NotImplementedError("Connector must implement getRecordCount");
+    def length(self):
+        return self.connector.length(self.name);
 
-    def saveResult(self,recordId,result):
-        raise NotImplementedError("Connector must implement saveResult");
-
-    def loadResult(self,recordId):
-        raise NotImplementedError("Connector must implement loadResult");
-
-    def getResultCount(self):
-        raise NotImplementedError("Connector must implement getResultCount");
+    

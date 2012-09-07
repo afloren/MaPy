@@ -3,12 +3,13 @@ import pickle
 def work(fileName):
     f = open(fileName,'rb');
     worker = pickle.load(f);
-    connector = pickle.load(f);
-    records = pickle.load(f);
-    mapper = pickle.load(f);
+    func = pickle.load(f);
+    inputLst = pickle.load(f);
+    outputLst = pickle.load(f);
+    indices = pickle.load(f);
     f.close();
 
-    worker.work(connector,records,mapper);
+    worker.work(func,inputLst,outputLst,indices);
 
 if __name__ == '__main__':
     import sys;

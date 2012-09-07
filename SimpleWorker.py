@@ -1,24 +1,25 @@
 import Worker
 
 class SimpleWorker(Worker.Worker):
-    def work(self,connector,records,mapper):
-	connector.open();
-        for recordId in records:
+    def work(self,func,inputLst,outputLst,indices):	
+        for index in indices:
             try:
-                record = connector.loadRecord(recordId);
+                records = [inputLst.getItem(i) for i in index[0]]
             except Exception as e:
-                print('Failed to load record: '+str(recordId));
+                print('Failed to load record: '+str(index));
                 print(e);
 
             try:
-                result = mapper.map(record);
+                results = func(*records);
             except Exception as e:
-                print('Failed to map record: '+str(recordId));
+                print('Failed to map record: '+str(index));
                 print(e);
 
             try:
-                connector.saveResult(recordId,result);
+                for idx,i in enumerate(index[1]):
+                    print(idx);
+                    print(i);
+                    outputLst.setItem(i,results[idx])
             except Exception as e:
-                print('Failed to save result: '+str(recordId));
+                print('Failed to save result: '+str(index));
                 print(e);
-        connector.close();

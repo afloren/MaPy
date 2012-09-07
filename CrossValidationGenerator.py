@@ -3,30 +3,24 @@ import operator
 import random
 
 class Split():
-    training = list;
-    validation = list;
+    pass
 
 class CrossValidationGenerator(Generator.Generator):
-    def __init__(self,K,recordName):
+    def __init__(self,K):
         self.K = K;
-        self.recordName = recordName;
         pass
 
-    def generate(self,connector):
-        connector.selectRecords(self.recordName);
-        recordCount = connector.getRecordCount();
-        s = range(self.recordCount);
-        random.shuffle(s);
-        p = partition(s,self.K);
-        connector.open();
-        connector.clearRecords();
+    def generate(self,input,output):
+        s = range(input.length())
+        random.shuffle(s)
+        p = partition(s,self.K)
+        output.clear()
         for id,set in enumerate(p):
             t = [s for s in p if s != set];
             split = Split();
             split.training = reduce(operator.add,t);
             split.validation = set;
-            connector.saveRecord(id,split);
-        connector.close();
+            output.setItem(id,split);
         return self.K;
 
 def partition(lst,n):

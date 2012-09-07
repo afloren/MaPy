@@ -6,44 +6,24 @@ from sqlalchemy import Table, Column, MetaData, types as sqlTypes, sql
 class SqlAlchemyConnector(Connector.Connector):
     def __init__(self,db):
         self.meta = MetaData();
-        self.meta.bind = sqlalchemy.create_engine(db);
+        self.meta.bind = sqlalchemy.create_engine(db,echo=True);
 	self.meta.reflect();
 
-    def selectRecords(self,name):
-        self.recordTable = Table(name,self.meta);
+    def clear(self,name):
+        table = Table(name,self.meta);
+        table.drop(checkfirst=True);
 
-    def selectResults(self,name):
-        self.resultTable = Table(name,self.meta);
+    def setItem(self,name,index,item):
+        table = Table(name,self.meta);
+        self.insertRow(table,index,item);
 
-    def clearRecords(self):
-	self.recordTable.drop();
+    def getItem(self,name,index):
+        table = Table(name,self.meta);
+        return self.selectRow(table,index);
 
-    def clearResults(self):
-	self.resultTable.drop();
-
-    def getRecordCount(self):
-        return self.getRowCount(self.recordTable);
-
-    def getResultCount(self):
-        return self.getRowCount(self.resultTable);
-
-    def saveRecord(self,recordId,record):
-        self.insertRow(self.recordTable,recordId,record);
-
-    def loadRecord(self,recordId):
-        return self.selectRow(self.recordTable,recordId);
-
-    def saveResult(self,recordId,result):
-        self.insertRow(self.resultTable,recordId,result);
-
-    def loadResult(self,recordId):
-        return self.selectRow(self.resultTable,recordId);
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
+    def length(self,name):
+        table = Table(name,self.meta);
+	return self.getRowCount(table);
 
     def insertRow(self,table,uid,row):
         keys = [k for k in row.__dict__ if not k[0] is '_'];
@@ -67,8 +47,8 @@ class SqlAlchemyConnector(Connector.Connector):
         return Row(table.c,row);               
         
     def getRowCount(self,table):
-        result = table.select([sql.func.count(table.c._id)]).execute();
-        row = result.fetchone();
+        result = sql.select([sql.func.count(table.c._id)]).execute();
+        row = result.fetchone();	
         return row[0];
 
 class Row:

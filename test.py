@@ -1,5 +1,6 @@
 import ParameterGenerator
 import Mapper
+import site_config
 
 class Record:
     pigs = int;
@@ -21,6 +22,14 @@ class MyMapper(Mapper.Mapper):
     def map(self,record):
         result = Result();
         result.fucks = record.pigs;
-        return result;
+        return (result,);
 mapper = MyMapper();
+
+records = site_config.connector.getList('records');
+results = site_config.connector.getList('results');
+
+#generator.generate(None,records);
+site_config.scheduler.run(site_config.worker,mapper.map,records,results);
+
+
 

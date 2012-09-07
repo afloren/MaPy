@@ -1,7 +1,28 @@
+import site_config.py
+
+def Generate(generator,input,output,
+             connector=site_config.connector,
+             scheduler=site_config.scheduler,
+             worker=site_config.worker):
+
+    pass
+
+def Map(mapper,input,output,
+        connector=site_config.connector,
+        scheduler=site_config.scheduler,
+        worker=site_config.worker):
+
+    pass
+
+def Reduce(reducer,input,output,
+           connector=site_config.connector,
+           scheduler=site_config.scheduler,
+           worker=site_config.worker):
+
+    pass
 
 def go(fileName,records,results,generatorName,
        mapperName,RecordName,ResultName):
-    import site_config;
     module = __import__(fileName);
     generator = module.__dict__[generatorName];
     mapper = module.__dict__[mapperName];

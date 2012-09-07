@@ -1,4 +1,4 @@
 
 class Worker:
-    def work(connector,records,mapper):
+    def work(func,input,output,indices):
         raise NotImplementedError("Worker must implement work");
