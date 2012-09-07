@@ -1,10 +1,8 @@
-import sqlite3
-import SqlConnector
+import SqlAlchemyConnector
 import SSHScheduler
 import SimpleWorker
 
-connector = SqlConnector.SqlConnector(SqlConnector.Database(sqlite3),
-                                      'experiment');
+connector = SqlAlchemyConnector.SqlAlchemyConnector('sqlite:///experiment');
 
 scheduler = SSHScheduler.SSHScheduler(['localhost']);
 
